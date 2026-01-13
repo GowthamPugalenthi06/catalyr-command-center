@@ -1,0 +1,46 @@
+import { Bell, Search, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+export function Header() {
+  const now = new Date();
+  const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening';
+
+  return (
+    <header className="h-16 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-40">
+      <div className="h-full flex items-center justify-between px-6">
+        {/* Greeting */}
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">
+            {greeting}, <span className="text-gradient-primary">Founder</span>
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          </p>
+        </div>
+
+        {/* Search & Actions */}
+        <div className="flex items-center gap-4">
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search anything..." 
+              className="pl-10 bg-muted/50 border-border focus:border-primary/50 transition-colors"
+            />
+          </div>
+          
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="w-5 h-5" />
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-[10px] text-destructive-foreground rounded-full flex items-center justify-center font-bold">
+              3
+            </span>
+          </Button>
+
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
+            <User className="w-5 h-5 text-primary-foreground" />
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
