@@ -12,7 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Target,
-  Mail
+  Mail,
+  Shield
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,6 +30,11 @@ const menuItems = [
   { id: 'chat', label: 'Command', icon: MessageSquare },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'email', label: 'Email', icon: Mail },
+];
+
+const bottomItems = [
+  { id: 'admin', label: 'Admin', icon: Shield },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {
@@ -92,20 +98,28 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
         })}
       </nav>
 
-      {/* Settings at bottom */}
-      <div className="absolute bottom-4 left-0 right-0 px-4">
-        <button
-          onClick={() => onViewChange('settings')}
-          className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
-            currentView === 'settings'
-              ? "bg-primary/10 text-primary border border-primary/20"
-              : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
-          )}
-        >
-          <Settings className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span className="font-medium">Settings</span>}
-        </button>
+      {/* Bottom Items */}
+      <div className="absolute bottom-4 left-0 right-0 px-4 space-y-2">
+        {bottomItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentView === item.id;
+          
+          return (
+            <button
+              key={item.id}
+              onClick={() => onViewChange(item.id)}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                isActive
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+              )}
+            >
+              <Icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-primary")} />
+              {!collapsed && <span className="font-medium">{item.label}</span>}
+            </button>
+          );
+        })}
       </div>
     </aside>
   );
