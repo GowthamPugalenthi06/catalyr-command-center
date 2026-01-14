@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { Header } from '@/components/dashboard/Header';
 import { DashboardView } from '@/components/dashboard/DashboardView';
@@ -10,6 +9,8 @@ import { ScheduleView } from '@/components/dashboard/ScheduleView';
 import { ChatInterface } from '@/components/dashboard/ChatInterface';
 import { AnalyticsView } from '@/components/dashboard/AnalyticsView';
 import { SettingsView } from '@/components/dashboard/SettingsView';
+import { AdminView } from '@/components/dashboard/AdminView';
+import { EmailView } from '@/components/dashboard/EmailView';
 
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -32,6 +33,10 @@ export default function Dashboard() {
         return <AnalyticsView />;
       case 'settings':
         return <SettingsView />;
+      case 'admin':
+        return <AdminView />;
+      case 'email':
+        return <EmailView />;
       default:
         return <DashboardView />;
     }

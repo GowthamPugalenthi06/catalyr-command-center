@@ -6,6 +6,78 @@
 
 @layer base {
   :root {
+    /* Light Theme */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 174 72% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 263 70% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 20% 94%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 263 70% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 174 72% 40%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 174 72% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 174 72% 40%;
+
+    /* Custom Catalyr tokens */
+    --glow-primary: 174 72% 40%;
+    --glow-secondary: 263 70% 50%;
+    --glass: 0 0% 100%;
+    --glass-border: 214 32% 91%;
+
+    /* Agent rank colors */
+    --rank-l1: 174 72% 40%;
+    --rank-l2: 263 70% 50%;
+    --rank-l3: 38 92% 50%;
+    --rank-l4: 142 76% 36%;
+    --rank-l5: 215 16% 47%;
+
+    /* Status colors */
+    --status-active: 142 76% 36%;
+    --status-pending: 38 92% 50%;
+    --status-idle: 215 16% 47%;
+
+    /* Chart colors for light mode */
+    --chart-grid: 214 32% 91%;
+    --chart-text: 215 16% 47%;
+    --chart-tooltip-bg: 0 0% 100%;
+    --chart-tooltip-border: 214 32% 91%;
+  }
+
+  .dark {
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
@@ -40,8 +112,6 @@
     --input: 217 33% 17%;
     --ring: 174 72% 56%;
 
-    --radius: 0.75rem;
-
     --sidebar-background: 222 47% 7%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 174 72% 56%;
@@ -68,11 +138,12 @@
     --status-active: 142 76% 46%;
     --status-pending: 38 92% 50%;
     --status-idle: 215 20% 45%;
-  }
 
-  .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    /* Chart colors for dark mode */
+    --chart-grid: 217 33% 17%;
+    --chart-text: 215 20% 55%;
+    --chart-tooltip-bg: 222 47% 8%;
+    --chart-tooltip-border: 217 33% 17%;
   }
 }
 
@@ -93,11 +164,19 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-card/60 backdrop-blur-xl border border-white/5;
+    @apply bg-card/80 backdrop-blur-xl border border-border;
+  }
+
+  .dark .glass-card {
+    @apply bg-card/60 border-white/5;
   }
 
   .glass-card-hover {
-    @apply glass-card transition-all duration-300 hover:bg-card/80 hover:border-white/10;
+    @apply glass-card transition-all duration-300 hover:bg-card hover:border-border;
+  }
+
+  .dark .glass-card-hover {
+    @apply hover:bg-card/80 hover:border-white/10;
   }
 
   .glow-primary {
