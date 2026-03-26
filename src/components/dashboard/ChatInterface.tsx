@@ -147,16 +147,16 @@ export function ChatInterface() {
           fetchSessions();
         }
 
-        const replyContent = data.chatMessage.parsedIntents?.[0]?.intent === 'CHAT'
-          ? data.chatMessage.responseSummary
-          : `Request processed. Created ${data.tasksCreated} task(s).\n\nDetails: ${data.chatMessage.parsedIntents?.map((i: any) => i.intent).join(', ')}`;
+        const replyContent = data.chatMessage.responseSummary || "Command processed.";
 
         const aiMessage: Message = {
           id: `msg-${Date.now() + 1}`,
           role: 'assistant',
-          content: replyContent || "Command processed.",
+          content: replyContent,
           timestamp: new Date(),
           status: 'complete',
+          // Pass the agent info if the first detected intent has an assigned role
+          agent: agents.find(a => a.role === 'COO') // Default to COO (Orion) appearance for system responses
         };
         setMessages((prev) => [...prev, aiMessage]);
 
