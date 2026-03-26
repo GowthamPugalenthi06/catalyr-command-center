@@ -33,26 +33,26 @@ export function PDFUpload({ onUploadComplete }: PDFUploadProps) {
         setError('');
 
         const droppedFile = e.dataTransfer.files?.[0];
-        if (droppedFile && droppedFile.type === 'application/pdf') {
+        if (droppedFile && (droppedFile.type === 'application/pdf' || droppedFile.type === 'text/plain')) {
             setFile(droppedFile);
         } else {
-            setError('Please upload a PDF file');
+            setError('Please upload a PDF or TXT file');
         }
     }, []);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         setError('');
         const selectedFile = e.target.files?.[0];
-        if (selectedFile && selectedFile.type === 'application/pdf') {
+        if (selectedFile && (selectedFile.type === 'application/pdf' || selectedFile.type === 'text/plain')) {
             setFile(selectedFile);
         } else {
-            setError('Please upload a PDF file');
+            setError('Please upload a PDF or TXT file');
         }
     };
 
     const handleUpload = async () => {
         if (!file) {
-            setError('Please select a PDF file');
+            setError('Please select a PDF or TXT file');
             return;
         }
         if (!companyName.trim()) {
@@ -90,7 +90,7 @@ export function PDFUpload({ onUploadComplete }: PDFUploadProps) {
             const data = await res.json();
             onUploadComplete(data);
         } catch (err: any) {
-            setError(err.message || 'Failed to upload PDF');
+            setError(err.message || 'Failed to upload document');
             setProgress(0);
         } finally {
             setUploading(false);
@@ -129,7 +129,7 @@ export function PDFUpload({ onUploadComplete }: PDFUploadProps) {
                 <input
                     id="pdf-input"
                     type="file"
-                    accept=".pdf"
+                    accept=".pdf,.txt"
                     onChange={handleFileSelect}
                     className="hidden"
                 />
@@ -150,10 +150,10 @@ export function PDFUpload({ onUploadComplete }: PDFUploadProps) {
                             <Upload className="w-7 h-7 text-primary" />
                         </div>
                         <p className="text-lg font-semibold text-foreground">
-                            {isDragging ? 'Drop your PDF here' : 'Upload Company Document'}
+                            {isDragging ? 'Drop your Document here' : 'Upload Company Document'}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            Drag & drop a PDF or click to browse • Max 10MB
+                            Drag & drop a PDF/TXT or click to browse • Max 10MB
                         </p>
                     </div>
                 )}

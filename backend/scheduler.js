@@ -71,4 +71,4 @@ async function triggerDailyPlanning() {
     }
 }
 
-module.exports = { initScheduler };
+module.exports = { initScheduler, triggerDailyPlanning };

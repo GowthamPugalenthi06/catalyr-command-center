@@ -1,15 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { PDFParse } = require('pdf-parse');
+const pdf = require('pdf-parse');
 const path = require('path');
 const fs = require('fs');
 
 const CompanyProfile = require('../models/CompanyProfile');
 const OnboardingState = require('../models/OnboardingState');
 const Agent = require('../models/Agent');
+const Task = require('../models/Task');
+const Lead = require('../models/Lead');
+const ChatMessage = require('../models/ChatMessage');
 const { chunkText } = require('../agents/ragService');
 const { getDefaultPrompt } = require('../agents/agentFactory');
+const { triggerDailyPlanning } = require('../scheduler');
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '..', 'uploads');
@@ -17,24 +21,18 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Multer config for PDF upload
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadsDir),
-    filename: (req, file, cb) => {
-        const uniqueName = `company_${Date.now()}${path.extname(file.originalname)}`;
-        cb(null, uniqueName);
-    },
-});
+// Multer config for memory storage (process in memory, save only TXT)
+const storage = multer.memoryStorage();
 const upload = multer({
     storage,
     fileFilter: (req, file, cb) => {
-        if (file.mimetype === 'application/pdf') {
+        if (file.mimetype === 'application/pdf' || file.mimetype === 'text/plain') {
             cb(null, true);
         } else {
-            cb(new Error('Only PDF files are allowed'), false);
+            cb(new Error('Only PDF and TXT files are allowed'), false);
         }
     },
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+    limits: { fileSize: 5 * 1024 * 1024 }, // 10MB max
 });
 
 // ──── AGENT DEFINITIONS (Full Company Workforce) ────
@@ -85,58 +83,150 @@ router.get('/agents', async (req, res) => {
 
 // ──── POST /api/onboarding/upload ────
 router.post('/upload', upload.single('pdf'), async (req, res) => {
+    console.log("📥 --- REQUEST RECEIVED ---");
+
     try {
         if (!req.file) {
-            return res.status(400).json({ error: 'No PDF file uploaded' });
+            return res.status(400).json({ error: 'No PDF or TXT file uploaded' });
         }
 
         const companyName = req.body.companyName || 'My Company';
 
-        // Read and parse the PDF
-        const pdfBuffer = fs.readFileSync(req.file.path);
-        const parser = new PDFParse({ data: pdfBuffer });
-        const textResult = await parser.getText();
-        const pdfText = textResult.text;
-
-        if (!pdfText || pdfText.trim().length === 0) {
-            return res.status(400).json({ error: 'Could not extract text from PDF. Make sure it contains readable text.' });
-        }
-
-        // Chunk the text for RAG
-        const chunks = chunkText(pdfText);
-
-        // Upsert company profile (replace old one)
-        await CompanyProfile.deleteMany({});
-        const profile = await CompanyProfile.create({
-            companyName,
-            pdfFilename: req.file.filename,
-            rawText: pdfText,
-            chunks,
+        console.log('📄 File received:', {
+            name: req.file.originalname,
+            size: req.file.size,
+            type: req.file.mimetype
         });
 
-        // Update onboarding state
+        // ─────────────────────────────────────────────
+        // STEP 1: Extract text safely
+        // ─────────────────────────────────────────────
+        let pdfText = '';
+        let totalPages = 1;
+
+        try {
+            if (req.file.mimetype === 'text/plain') {
+                pdfText = req.file.buffer.toString('utf8');
+            } else {
+                const data = await pdf(req.file.buffer, {
+                    max: 10 // ✅ limit pages to avoid memory explosion
+                });
+
+                pdfText = data.text || '';
+                totalPages = data.numpages || 1;
+            }
+        } catch (err) {
+            console.error('❌ PDF PARSE ERROR:', err);
+            return res.status(400).json({
+                error: 'Invalid or unsupported PDF file'
+            });
+        }
+
+        // ─────────────────────────────────────────────
+        // STEP 2: Validate extracted text
+        // ─────────────────────────────────────────────
+        if (!pdfText || pdfText.trim().length === 0) {
+            return res.status(400).json({
+                error: 'Could not extract text from document.'
+            });
+        }
+
+        console.log("📊 Extracted text length:", pdfText.length);
+
+        // 🚨 HARD LIMIT (CRITICAL)
+        if (pdfText.length > 500_000) {
+            return res.status(400).json({
+                error: 'Document too large after extraction (limit ~500k chars)'
+            });
+        }
+
+        // ─────────────────────────────────────────────
+        // STEP 3: Save as TXT (lightweight)
+        // ─────────────────────────────────────────────
+        const baseName = req.file.originalname.replace(/\.[^/.]+$/, "");
+        const txtFilename = `processed_${baseName}_${Date.now()}.txt`;
+        const txtPath = path.join(uploadsDir, txtFilename);
+
+        fs.writeFileSync(txtPath, pdfText, 'utf8');
+
+        // ─────────────────────────────────────────────
+        // STEP 4: SAFE chunking (NO memory explosion)
+        // ─────────────────────────────────────────────
+        function safeChunkText(text, chunkSize = 1000) {
+            const chunks = [];
+            let i = 0;
+
+            while (i < text.length) {
+                chunks.push({
+    text: text.slice(i, i + chunkSize)
+}); 
+                i += chunkSize;
+            }
+
+            return chunks;
+        }
+
+        console.log("✂️ Chunking text...");
+        const chunks = safeChunkText(pdfText);
+
+        console.log("✅ Chunks created:", chunks.length);
+
+        // 🚨 SECOND SAFETY LIMIT
+        if (chunks.length > 2000) {
+            return res.status(400).json({
+                error: 'Too many chunks generated. Document too large.'
+            });
+        }
+
+        // ─────────────────────────────────────────────
+        // STEP 5: Save to DB
+        // ─────────────────────────────────────────────
+        console.log("💾 Saving to DB...");
+
+        await CompanyProfile.deleteMany({});
+
+        await CompanyProfile.create({
+            companyName,
+            pdfFilename: txtFilename,
+            rawText: pdfText,   // ⚠️ safe now (limited size)
+            chunks              // ⚠️ safe chunking
+        });
+
         await OnboardingState.updateOne(
             {},
             {
                 $set: {
-                    pdfFilename: req.file.filename,
-                    companyName,
-                },
+                    pdfFilename: txtFilename,
+                    companyName
+                }
             },
             { upsert: true }
         );
 
+        // ─────────────────────────────────────────────
+        // STEP 6: CLEAN MEMORY (VERY IMPORTANT)
+        // ─────────────────────────────────────────────
+        pdfText = null;
+        if (req.file) req.file.buffer = null;
+
+        // ─────────────────────────────────────────────
+        // RESPONSE
+        // ─────────────────────────────────────────────
         res.json({
             success: true,
             companyName,
             chunksCreated: chunks.length,
-            textPreview: pdfData.text.substring(0, 500) + (pdfData.text.length > 500 ? '...' : ''),
-            pages: pdfData.total,
+            textPreview: chunks[0]?.text?.substring(0, 300) || '',
+            pages: totalPages
         });
 
     } catch (error) {
-        console.error('[Onboarding] Upload error:', error);
-        res.status(500).json({ error: 'Failed to process PDF: ' + error.message });
+        console.error('🔥 [Onboarding] Upload error:', error);
+        console.error(error.stack);
+
+        res.status(500).json({
+            error: 'Failed to process PDF: ' + error.message
+        });
     }
 });
 
@@ -189,6 +279,9 @@ router.post('/select-agents', async (req, res) => {
             { upsert: true }
         );
 
+        // 🔥 Kick off real-time task generation IMMEDIATELY in the background
+        triggerDailyPlanning().catch(e => console.error("Initial Daily Planning Failed:", e));
+
         res.json({
             success: true,
             agentsCreated: createdAgents.length,
@@ -207,6 +300,9 @@ router.delete('/reset', async (req, res) => {
         await CompanyProfile.deleteMany({});
         await OnboardingState.deleteMany({});
         await Agent.deleteMany({});
+        await Task.deleteMany({});
+        await Lead.deleteMany({});
+        await ChatMessage.deleteMany({});
 
         // Clean uploaded files
         if (fs.existsSync(uploadsDir)) {

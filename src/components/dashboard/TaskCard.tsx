@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Task } from '@/types/catalyr';
-import { Clock, AlertCircle, CheckCircle2, Loader2, Eye, Bot } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle2, Loader2, Eye, Bot, XCircle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
 interface TaskCardProps {
@@ -28,6 +28,7 @@ const statusIcons = {
   review: Eye,
   completed: CheckCircle2,
   stuck: AlertCircle,
+  declined: XCircle,
 };
 
 const statusStyles = {
@@ -36,6 +37,7 @@ const statusStyles = {
   review: 'text-warning',
   completed: 'text-success',
   stuck: 'text-destructive',
+  declined: 'text-destructive',
 };
 
 export function TaskCard({ task, onClick }: TaskCardProps) {

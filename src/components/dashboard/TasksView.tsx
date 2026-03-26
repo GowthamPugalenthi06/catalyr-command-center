@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from '@/components/ui/use-toast';
 
-type FilterType = 'all' | 'pending' | 'in_progress' | 'review' | 'completed';
+type FilterType = 'all' | 'pending' | 'review' | 'completed' | 'declined';
 
 export function TasksView() {
   const [filter, setFilter] = useState<FilterType>('all');
@@ -76,10 +76,14 @@ export function TasksView() {
   const mapStatus = (s: string): string => {
     const map: Record<string, string> = {
       'PENDING': 'pending',
-      'IN_PROGRESS': 'in_progress',
+      'IN_PROGRESS': 'pending', // Group in-progress under pending visually
+      'REVIEW': 'review',
+      'COMPLETED': 'completed',
+      'DECLINED': 'declined',
+      'FAILED': 'pending', // fallback logic
+      // legacy mappings below just for safety
       'WAITING_APPROVAL': 'review',
-      'DONE': 'completed',
-      'FAILED': 'stuck'
+      'DONE': 'completed'
     };
     return map[s] || 'pending';
   };
@@ -118,9 +122,11 @@ export function TasksView() {
   const updateTaskStatus = async (taskId: string, newStatus: string) => {
     try {
       let backendStatus = newStatus.toUpperCase();
-      if (newStatus === 'review') backendStatus = 'WAITING_APPROVAL';
-      if (newStatus === 'completed') backendStatus = 'DONE';
-      if (newStatus === 'in_progress') backendStatus = 'IN_PROGRESS';
+      // Enforce direct mapping overrides
+      if (newStatus === 'review') backendStatus = 'REVIEW';
+      if (newStatus === 'completed') backendStatus = 'COMPLETED';
+      if (newStatus === 'declined') backendStatus = 'DECLINED';
+      if (newStatus === 'pending') backendStatus = 'PENDING';
 
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: 'PUT',
@@ -193,10 +199,10 @@ export function TasksView() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
           { id: 'all', label: 'All Tasks', icon: PlayCircle, color: 'text-foreground' },
-          { id: 'review', label: 'Waiting Approval', icon: Clock, color: 'text-orange-500' },
-          { id: 'pending', label: 'Pending Queue', icon: Clock, color: 'text-muted-foreground' },
-          { id: 'in_progress', label: 'In Progress', icon: PlayCircle, color: 'text-blue-500' },
-          { id: 'completed', label: 'Completed', icon: CheckCircle, color: 'text-emerald-500' }
+          { id: 'pending', label: 'Pending', icon: Clock, color: 'text-muted-foreground' },
+          { id: 'review', label: 'Ready for Review', icon: Clock, color: 'text-orange-500' },
+          { id: 'completed', label: 'Completed', icon: CheckCircle, color: 'text-emerald-500' },
+          { id: 'declined', label: 'Declined', icon: Filter, color: 'text-destructive' }
         ].map((tab: any) => {
           const count = tasks.filter(t => tab.id === 'all' ? true : t.status === tab.id).length;
           const isActive = filter === tab.id;

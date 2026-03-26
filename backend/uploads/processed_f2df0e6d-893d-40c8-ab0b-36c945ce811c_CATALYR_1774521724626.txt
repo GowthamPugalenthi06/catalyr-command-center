@@ -1,0 +1,192 @@
+
+
+CATALYR
+Services, Pricing & Operations Document
+ COMPANY OVERVIEW
+Company Name: Catalyr
+Type: Service-based Product Engineering Studio
+Team Size: 2
+Delivery Model: Remote-first
+Core Strengths: Web applications, startup MVPs, business systems, AI-enabled 
+features
+What Catalyr Does
+Catalyr builds reliable, scalable digital products for startups and businesses 
+using modern web and mobile technologies. We focus on clarity, realistic 
+timelines, and long-term maintainability.
+What Catalyr Does NOT Do
+Affordable freelance work
+One-off landing pages with no value
+AI research or experimental ML
+Undefined scope or rushed delivery
+Catalyr is a delivery-first engineering studio, not a consulting firm.
+ CORE SERVICES (CLIENT-FACING)
+These are the ONLY services Catalyr presents publicly.
+1. Custom Web Application Development
+CATALYR1
+
+We design and build scalable web applications for startups and businesses.
+Includes
+Web applications MERN / Next.js / Laravel)
+Admin dashboards
+Authentication & role-based access
+API & backend development
+Payment and third-party integrations
+Use Cases
+Internal business tools
+SaaS platforms
+Data dashboards
+Timeline: 36 weeks
+Pricing: ₹1.5L  ₹6L
+2. Startup MVP Development
+We help founders validate ideas with a focused, production-ready MVP.
+Includes
+Core-feature web MVP
+Optional mobile app Flutter)
+Clear scope & milestones
+Scalable architecture (no hacks)
+Timeline: 3050 days
+Pricing: ₹1.5L  ₹8L
+3. Business Automation Systems
+We build systems that reduce manual work and improve operational efficiency.
+Includes
+CATALYR2
+
+CRM / ERP (small to medium scale)
+POS & event management systems
+Workflow automation
+Reporting & analytics dashboards
+Timeline: 2045 days
+Pricing: ₹1L  ₹5L
+AI Integrations (ADD-ON ONLY)
+AI is never sold standalone. It is integrated inside products.
+Includes
+Website & WhatsApp chatbots
+AI assistants inside apps
+Workflow automation
+Smart summaries & insights
+Timeline:  325 days
+Pricing: ₹40k  ₹3L
+ INTERNAL DELIVERY MASTER TABLE (STRICTLY 
+INTERNAL)
+Web / SaaS / MVP
+ScopeActual Dev TimeClient TimelinePricing
+Basic Web App  Admin1520 days23 w eeks₹80k  ₹1.5L
+Medium SaaS / Dashboard2535 days34 w  eeks₹1.5L  ₹3L
+Complex SaaS3545 days11. 5 months₹3L  ₹6L
+Mobile Applications (Flutter)
+CATALYR3
+
+ScopeActual Dev TimeClient TimelinePricing
+App only API ready)1520 days34 w  eeks₹70k  ₹1.5L
+App  Backend3040 days46 w  eeks₹1.5L  ₹4L
+App  AI Features510 days—₹50k  ₹2L
+AI Integration & Automation
+ScopeActual Dev TimeClient TimelinePricing
+Basic Chatbot35 days1 week₹40k  ₹1L
+AI Workflow Automation712 days12 w eeks₹1L  ₹3L
+AI Assistant Inside Product1525 days23 w eeks₹2L  ₹5L
+Maintenance & Support (Monthly)
+TypeHoursPricing
+Basic Support510 hrs₹15k  ₹30k
+Active Dev  AI Tuning—₹40k  ₹1L
+ CLIENT ACQUISITION STRATEGY
+Positioning (MANDATORY)
+“We are a small product engineering team building web, mobile, and AI-enabled 
+solutions.ˮ
+Location is irrelevant. Delivery matters.
+Client Sources (Priority Order)
+ Remote Clients 80%
+LinkedIn founders
+Startup communities
+Indie founders
+CATALYR4
+
+Referrals
+ Local Clients 20%
+SMEs
+Colleges
+Event organizers
+CA & consulting offices
+Local clients = learning + testimonials, not scale.
+First Outreach Message (Copy-Paste)
+Hi Name>,
+Weʼre a small product engineering team at Catalyr, working on web, mobile, 
+and AI-enabled solutions.
+We help startups and businesses build reliable products with clear scope and 
+realistic timelines.
+If youʼre planning to build or improve a product, weʼd be happy to understand 
+your requirement and suggest a clear technical approach.
+Let us know if a short discussion works.
+No selling. Only conversation.
+ CLIENT CALL HANDLING SYSTEM
+Golden Rules
+No random calls
+No long calls
+No pricing on first call
+Everything documented
+Before the Call (MANDATORY)
+CATALYR5
+
+Prepare:
+5 key questions
+2 solution approaches
+Timeline range
+Pricing range (not disclosed yet)
+First Call Script (15–20 minutes max)
+“Thanks for reaching out. Iʼll ask a few questions to understand the 
+requirement, then weʼll suggest the best approach and follow up with a written 
+proposal.ˮ
+Ask ONLY
+ What problem are you trying to solve?
+ Who will use this product?
+ Is this internal or customer-facing?
+ Any deadline youʼre targeting?
+ Any similar product you like?
+Close with:
+“Weʼll pr epare a written proposal with scope, timeline, and cost.ˮ
+End the call.
+After the Call (MANDATORY)
+Send summary message:
+Summary of Discussion
+Problem:
+Proposed solution:
+Estimated timeline:
+CATALYR6
+
+Next steps:
+This single step builds trust instantly.
+ PRICING & NEGOTIATION RULES
+If Client Says: “Too costlyˮ
+Reply:
+“Our pricing reflects scope, quality, and post-delivery stability.
+If needed, we can reduce scope to fit the budget.ˮ
+Never reduce price. Reduce scope.
+If Client Says: “Someone is cheaperˮ
+Reply:
+“Thatʼ   s fine. We focus on reliable delivery and long-term value.ˮ
+Then stop talking.
+ PROJECT PROPOSAL STRUCTURE (STANDARD)
+Every proposal must include:
+ Project Overview
+ Scope of Work (bullet points)
+ Tech Stack
+ Timeline & Milestones
+ Pricing
+ Payment Terms
+ Out of Scope
+ Support & Warranty
+CATALYR7
+
+ Next Steps
+Payment Terms (NON-NEGOTIABLE)
+3040% upfront
+30% mid-project
+3040% on delivery
+No advance = no work.
+ COMMUNICATION RULES (STRICT)
+One primary client contact
+Weekly fixed update (written)
+Scope changes only via written confirmation
+No late-night calls
+No unpaid extra work
+CATALYR8

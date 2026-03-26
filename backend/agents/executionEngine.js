@@ -49,9 +49,9 @@ async function executeTask(taskId) {
 
         // Approval logic
         if (task.requiresApproval) {
-            task.status = 'WAITING_APPROVAL';
+            task.status = 'REVIEW';
         } else {
-            task.status = 'DONE';
+            task.status = 'COMPLETED';
         }
 
         await task.save();

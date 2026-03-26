@@ -27,7 +27,7 @@ export interface Agent {
 
 export type TaskPriority = 'critical' | 'high' | 'medium' | 'low';
 
-export type TaskStatus = 'pending' | 'in_progress' | 'review' | 'completed' | 'stuck';
+export type TaskStatus = 'pending' | 'in_progress' | 'review' | 'completed' | 'stuck' | 'declined';
 
 export interface Task {
   id: string;
