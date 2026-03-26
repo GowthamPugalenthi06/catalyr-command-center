@@ -1,9 +1,32 @@
+import { useState, useEffect } from 'react';
+import { Agent } from '@/types/catalyr';
 import { cn } from '@/lib/utils';
-import { agents } from '@/data/mockData';
 import { AgentCard } from './AgentCard';
 import { ChevronDown } from 'lucide-react';
+import { AgentDetailModal } from './AgentDetailModal';
 
 export function AgentHierarchy() {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const res = await fetch('/api/agents');
+        const data = await res.json();
+        // Map _id to id
+        const mapped = data.map((a: any) => ({
+          ...a,
+          id: a._id,
+        }));
+        setAgents(mapped);
+      } catch (e) {
+        console.error("Failed to fetch agents", e);
+      }
+    };
+    fetchAgents();
+  }, []);
+
   const l1Agents = agents.filter(a => a.rank === 'L1');
   const l2Agents = agents.filter(a => a.rank === 'L2');
   const l3Agents = agents.filter(a => a.rank === 'L3');
@@ -55,11 +78,15 @@ export function AgentHierarchy() {
             <div className={cn(
               "grid gap-4",
               tier.agents.length === 1 ? "grid-cols-1 max-w-md mx-auto" :
-              tier.agents.length <= 2 ? "grid-cols-1 md:grid-cols-2" :
-              "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                tier.agents.length <= 2 ? "grid-cols-1 md:grid-cols-2" :
+                  "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
             )}>
               {tier.agents.map((agent) => (
-                <AgentCard key={agent.id} agent={agent} />
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  onClick={setSelectedAgent}
+                />
               ))}
             </div>
 
@@ -75,6 +102,13 @@ export function AgentHierarchy() {
           </div>
         ))}
       </div>
+
+      {selectedAgent && (
+        <AgentDetailModal
+          agent={selectedAgent}
+          onClose={() => setSelectedAgent(null)}
+        />
+      )}
     </div>
   );
 }

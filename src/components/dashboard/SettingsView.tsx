@@ -3,19 +3,25 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { 
-  Key, 
-  Mail, 
-  Shield, 
-  Bell, 
-  Database, 
+import {
+  Key,
+  Mail,
+  Shield,
+  Bell,
+  Database,
   Zap,
   Plus,
   Eye,
   EyeOff,
   Copy,
-  Check
+  Check,
+  RefreshCw,
+  FileSearch,
+  Trash2
 } from 'lucide-react';
+import { useOnboarding } from '@/context/OnboardingContext';
+import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface ApiKey {
   id: string;
@@ -25,7 +31,113 @@ interface ApiKey {
   lastUsed: Date | null;
 }
 
+function WorkspaceSettings() {
+  const { status, refresh } = useOnboarding();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleReset = async () => {
+    if (!window.confirm('Are you sure? This will delete all company data, reset your AI agents, and return you to the onboarding wizard.')) {
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      const res = await fetch('/api/onboarding/reset', {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        toast({
+          title: "Onboarding Reset",
+          description: "All workspace data has been cleared.",
+        });
+        localStorage.removeItem('catalyr_auth'); // Force re-login/re-onboard cycle clean
+        localStorage.removeItem('catalyr_onboarding');
+        window.location.href = '/login';
+      } else {
+        throw new Error('Reset failed');
+      }
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to reset onboarding.",
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <Database className="w-5 h-5 text-primary" />
+        </div>
+        <div>
+          <h3 className="font-semibold text-foreground">Workspace Training</h3>
+          <p className="text-sm text-muted-foreground">Manage your company knowledge base and AI training</p>
+        </div>
+      </div>
+
+      <div className="glass-card rounded-xl p-6 space-y-6">
+        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-background flex items-center justify-center border border-border">
+              <FileSearch className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium text-foreground">Company PDF</p>
+              <p className="text-sm text-muted-foreground">{status.pdfFilename || 'No document uploaded'}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-2 py-1 bg-green-500/10 text-green-500 rounded-full border border-green-500/20">
+              Training Active
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-muted/30 rounded-xl">
+            <p className="text-sm font-medium text-foreground mb-1">Company Name</p>
+            <p className="text-lg font-bold text-primary">{status.companyName || 'Not Set'}</p>
+          </div>
+          <div className="p-4 bg-muted/30 rounded-xl">
+            <p className="text-sm font-medium text-foreground mb-1">Active Agents</p>
+            <p className="text-lg font-bold text-primary">{status.selectedAgents.length} Agents</p>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-border flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">Factory Reset</p>
+            <p className="text-xs text-muted-foreground">Clear all training data and re-run onboarding</p>
+          </div>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleReset}
+            disabled={isResetting}
+            className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive hover:text-white transition-all"
+          >
+            {isResetting ? (
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4 mr-2" />
+            )}
+            Reset Workspace
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function SettingsView() {
+
   const [showKey, setShowKey] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -46,6 +158,8 @@ export function SettingsView() {
         <h2 className="text-xl font-bold text-foreground">Settings</h2>
         <p className="text-sm text-muted-foreground">Configure your Catalyr workspace</p>
       </div>
+
+      <WorkspaceSettings />
 
       {/* API Keys */}
       <section className="space-y-4">
@@ -187,7 +301,7 @@ export function SettingsView() {
             <span className="font-semibold text-foreground">2,847 / 10,000</span>
           </div>
           <div className="h-3 bg-muted rounded-full overflow-hidden mb-4">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
               style={{ width: '28.47%' }}
             />

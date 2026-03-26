@@ -1,10 +1,11 @@
 import { cn } from '@/lib/utils';
 import { Task } from '@/types/catalyr';
-import { Clock, AlertCircle, CheckCircle2, Loader2, Eye } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle2, Loader2, Eye, Bot } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
 interface TaskCardProps {
   task: Task;
+  onClick?: (task: Task) => void;
 }
 
 const priorityStyles = {
@@ -37,18 +38,20 @@ const statusStyles = {
   stuck: 'text-destructive',
 };
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, onClick }: TaskCardProps) {
   const StatusIcon = statusIcons[task.status];
   const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'completed';
 
   return (
-    <div className={cn(
-      "glass-card-hover p-4 rounded-xl border-l-4 transition-all",
-      priorityStyles[task.priority]
-    )}>
+    <div
+      onClick={() => onClick?.(task)}
+      className={cn(
+        "glass-card-hover p-4 rounded-xl border-l-4 transition-all cursor-pointer hover:scale-[1.01]",
+        priorityStyles[task.priority]
+      )}>
       <div className="flex items-start gap-3">
         <StatusIcon className={cn("w-5 h-5 mt-0.5 flex-shrink-0", statusStyles[task.status])} />
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-2">
             <h3 className="font-medium text-foreground">{task.title}</h3>
@@ -56,13 +59,13 @@ export function TaskCard({ task }: TaskCardProps) {
               {task.priority}
             </span>
           </div>
-          
+
           <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
             {task.description}
           </p>
 
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {task.tags.map((tag) => (
+            {task.tags && task.tags.length > 0 && task.tags.map((tag) => (
               <span key={tag} className="text-xs px-2 py-0.5 bg-muted rounded-md text-muted-foreground">
                 {tag}
               </span>
@@ -71,10 +74,16 @@ export function TaskCard({ task }: TaskCardProps) {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-lg">{task.assignee.avatar}</span>
+              <span className="text-lg flex items-center justify-center w-6 h-6 rounded-full bg-primary/10">
+                {(task.assignee.avatar === '🤖' || task.assignee.avatar === 'SYSTEM' || task.assignee.avatar === 'Bot') ? (
+                  <Bot className="w-4 h-4 text-primary" />
+                ) : (
+                  task.assignee.avatar
+                )}
+              </span>
               <span className="text-sm text-muted-foreground">{task.assignee.name}</span>
             </div>
-            
+
             <div className={cn(
               "flex items-center gap-1.5 text-xs",
               isOverdue ? "text-destructive" : "text-muted-foreground"
@@ -91,7 +100,7 @@ export function TaskCard({ task }: TaskCardProps) {
                 <span className="text-foreground font-medium">{task.progress}%</span>
               </div>
               <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
                   style={{ width: `${task.progress}%` }}
                 />

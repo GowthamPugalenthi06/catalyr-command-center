@@ -1,320 +1,509 @@
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { Mail, Edit, Trash2, Reply, Send, RefreshCw, X, FileText, Users, Plus, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Inbox, 
-  Send, 
-  FileText, 
-  RefreshCw, 
-  Mail,
-  Star,
-  Trash2,
-  Reply,
-  Forward,
-  MoreHorizontal,
-  Plus,
-  Users,
-  Clock,
-  CheckCircle2
-} from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-type EmailTab = 'inbox' | 'compose' | 'bulk' | 'templates';
-
-interface Email {
-  id: string;
-  from: string;
-  subject: string;
-  preview: string;
-  date: Date;
-  read: boolean;
-  starred: boolean;
-}
-
-interface Template {
-  id: string;
-  name: string;
-  subject: string;
-  body: string;
-  usageCount: number;
-}
+type Template = { id: string; name: string; subject: string; body: string };
 
 export function EmailView() {
-  const [activeTab, setActiveTab] = useState<EmailTab>('inbox');
-  const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
+  const [emails, setEmails] = useState<any[]>([]);
+  const [selectedEmail, setSelectedEmail] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  const emails: Email[] = [
-    { id: '1', from: 'sarah@techflow.ai', subject: 'Re: Partnership Opportunity', preview: 'Hi, I wanted to follow up on our previous conversation about...', date: new Date(), read: false, starred: true },
-    { id: '2', from: 'marcus@scaleup.io', subject: 'Demo Request', preview: 'We are interested in scheduling a demo for your platform...', date: new Date(Date.now() - 3600000), read: false, starred: false },
-    { id: '3', from: 'newsletter@producthunt.com', subject: 'Top Products This Week', preview: 'Check out the trending products on Product Hunt...', date: new Date(Date.now() - 7200000), read: true, starred: false },
-    { id: '4', from: 'david@cloudnine.io', subject: 'Pricing Question', preview: 'Can you provide more details about your enterprise pricing...', date: new Date(Date.now() - 86400000), read: true, starred: true },
-  ];
+  // Tabs: 'inbox', 'templates', 'bulk'
+  const [currentTab, setCurrentTab] = useState('inbox');
 
-  const templates: Template[] = [
-    { id: '1', name: 'Initial Outreach', subject: 'Quick Question About {{company}}', body: 'Hi {{name}},\n\nI noticed that {{company}} is doing great things in...', usageCount: 234 },
-    { id: '2', name: 'Follow Up', subject: 'Following up on my previous email', body: 'Hi {{name}},\n\nI wanted to follow up on my previous message...', usageCount: 156 },
-    { id: '3', name: 'Meeting Request', subject: 'Would love to connect', body: 'Hi {{name}},\n\nI would love to schedule a quick call to discuss...', usageCount: 89 },
-  ];
+  // Compose State
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [composeData, setComposeData] = useState({ to: '', subject: '', body: '' });
 
-  const tabs = [
-    { id: 'inbox', label: 'Inbox', icon: Inbox, count: emails.filter(e => !e.read).length },
-    { id: 'compose', label: 'Compose', icon: Send },
-    { id: 'bulk', label: 'Bulk Send', icon: Users },
-    { id: 'templates', label: 'Templates', icon: FileText, count: templates.length },
-  ];
+  // Templates State
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [newTemplate, setNewTemplate] = useState({ name: '', subject: '', body: '' });
+
+  // Bulk Mail State
+  const [bulkRecipients, setBulkRecipients] = useState('');
+  const [bulkSubject, setBulkSubject] = useState('');
+  const [bulkBody, setBulkBody] = useState('');
+  const [bulkProgress, setBulkProgress] = useState({ sent: 0, total: 0, sending: false });
+  const [emailToDelete, setEmailToDelete] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 1. Try to load from cache first
+    const cached = localStorage.getItem('cached_emails');
+    const lastSync = localStorage.getItem('last_email_sync');
+
+    if (cached) {
+      setEmails(JSON.parse(cached));
+    }
+
+    // 2. Load templates
+    const savedTemplates = localStorage.getItem('email_templates');
+    if (savedTemplates) {
+      setTemplates(JSON.parse(savedTemplates));
+    } else {
+      setTemplates([
+        { id: '1', name: 'Welcome Email', subject: 'Welcome to Catalyr', body: 'Hi there,\n\nWelcome to the future of enterprise.\n\nBest,\nTeam Catalyr' },
+        { id: '2', name: 'Follow Up', subject: 'Following up on our conversation', body: 'Hi,\n\nJust wanted to circle back on this.\n\nThanks.' }
+      ]);
+    }
+
+    // 3. Check if auto-sync is needed (9 AM or 9 PM)
+    const shouldSync = () => {
+      if (!lastSync) return true; // No sync ever
+
+      const now = new Date();
+      const last = new Date(lastSync);
+      const today9am = new Date(); today9am.setHours(9, 0, 0, 0);
+      const today9pm = new Date(); today9pm.setHours(21, 0, 0, 0);
+
+      // If text sync was before today 9am, and now is after 9am -> Sync
+      if (now >= today9am && last < today9am) return true;
+
+      // If last sync was before today 9pm, and now is after 9pm -> Sync
+      if (now >= today9pm && last < today9pm) return true;
+
+      return false;
+    };
+
+    if (shouldSync()) {
+      fetchEmails();
+    }
+  }, []);
+
+  const saveTemplates = (newTemplates: Template[]) => {
+    setTemplates(newTemplates);
+    localStorage.setItem('email_templates', JSON.stringify(newTemplates));
+  };
+
+  const fetchEmails = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/email/inbox');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to fetch emails');
+      }
+
+      if (Array.isArray(data)) {
+        setEmails(data);
+        // Update Cache
+        localStorage.setItem('cached_emails', JSON.stringify(data));
+        localStorage.setItem('last_email_sync', new Date().toISOString());
+
+        if (data.length > 0 && !selectedEmail) {
+          setSelectedEmail(data[0]);
+        }
+      } else {
+        console.error("API returned non-array:", data);
+        // Fallback to empty array or keep existing if relevant, but don't set object
+      }
+    } catch (e) {
+      toast({ title: "Connection Error", description: "Using offline mode / cached data.", variant: "default" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSend = async () => {
+    try {
+      const res = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(composeData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Sent", description: "Email sent successfully" });
+        setIsComposeOpen(false);
+        setComposeData({ to: '', subject: '', body: '' });
+      }
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to send email", variant: "destructive" });
+    }
+  };
+
+  const handleCreateTemplate = () => {
+    if (!newTemplate.name) return;
+    const newKp: Template = { ...newTemplate, id: Date.now().toString() };
+    saveTemplates([...templates, newKp]);
+    setNewTemplate({ name: '', subject: '', body: '' });
+    toast({ title: "Template Created", description: "New email template saved." });
+  };
+
+  const handleDeleteTemplate = (id: string) => {
+    saveTemplates(templates.filter(t => t.id !== id));
+  };
+
+  const handleApplyTemplate = (templateId: string) => {
+    const tmpl = templates.find(t => t.id === templateId);
+    if (tmpl) {
+      setComposeData(prev => ({ ...prev, subject: tmpl.subject, body: tmpl.body }));
+    }
+  };
+
+  const handleBulkSend = async () => {
+    const recipients = bulkRecipients.split(',').map(e => e.trim()).filter(e => e);
+    if (recipients.length === 0) return;
+
+    setBulkProgress({ sent: 0, total: recipients.length, sending: true });
+
+    for (let i = 0; i < recipients.length; i++) {
+      const email = recipients[i];
+      try {
+        await fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: email, subject: bulkSubject, body: bulkBody })
+        });
+        setBulkProgress(prev => ({ ...prev, sent: prev.sent + 1 }));
+      } catch (e) {
+        console.error(`Failed to send to ${email}`);
+      }
+      // Small delay to prevent rate limit
+      await new Promise(r => setTimeout(r, 500));
+    }
+
+    setBulkProgress(prev => ({ ...prev, sending: false }));
+    toast({ title: "Bulk Send Complete", description: `Processed ${recipients.length} emails.` });
+    setBulkRecipients('');
+    setBulkSubject('');
+    setBulkBody('');
+  };
+
+  // Triggered by the UI button
+  const promptDelete = (id: string) => {
+    setEmailToDelete(id);
+  };
+
+  // Executed by the Alert Dialog
+  const executeDelete = async () => {
+    if (!emailToDelete) return;
+    const id = emailToDelete;
+    setEmailToDelete(null); // Close dialog
+
+    // Optimistic UI update
+    const previousEmails = [...emails];
+    setEmails(emails.filter(e => e.id !== id));
+    if (selectedEmail?.id === id) setSelectedEmail(null);
+
+    try {
+      const res = await fetch(`/api/email/${id}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        toast({ title: "Deleted", description: "Email moved to Trash." });
+        // Update cache
+        const updatedEmails = emails.filter(e => e.id !== id);
+        localStorage.setItem('cached_emails', JSON.stringify(updatedEmails));
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to delete email", variant: "destructive" });
+      setEmails(previousEmails); // Revert
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Email Center</h2>
-          <p className="text-sm text-muted-foreground">Manage inbox, send emails, and templates</p>
-        </div>
-        <Button variant="outline" className="gap-2">
-          <RefreshCw className="w-4 h-4" />
-          Sync Gmail
+    <div className="flex h-[calc(100vh-8rem)] gap-4 animate-in fade-in">
+      {/* 1. Navigation Sidenav */}
+      <div className="w-48 flex flex-col gap-2 bg-card/50 rounded-xl p-2 border border-border h-full">
+        <Button
+          variant={currentTab === 'inbox' ? 'secondary' : 'ghost'}
+          className="justify-start"
+          onClick={() => setCurrentTab('inbox')}
+        >
+          <Mail className="w-4 h-4 mr-2" /> Inbox
         </Button>
+        <Button
+          variant={currentTab === 'templates' ? 'secondary' : 'ghost'}
+          className="justify-start"
+          onClick={() => setCurrentTab('templates')}
+        >
+          <FileText className="w-4 h-4 mr-2" /> Templates
+        </Button>
+        <Button
+          variant={currentTab === 'bulk' ? 'secondary' : 'ghost'}
+          className="justify-start"
+          onClick={() => setCurrentTab('bulk')}
+        >
+          <Users className="w-4 h-4 mr-2" /> Bulk Mail
+        </Button>
+
+        <div className="mt-auto">
+          <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full"><Plus className="w-4 h-4 mr-2" /> Compose</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[700px]">
+              <DialogHeader><DialogTitle>New Message</DialogTitle></DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="flex items-center gap-2">
+                  <Label className="w-16">Template</Label>
+                  <Select onValueChange={handleApplyTemplate}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select a template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map(t => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-16">To</Label>
+                  <Input value={composeData.to} onChange={e => setComposeData({ ...composeData, to: e.target.value })} className="flex-1" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-16">Subject</Label>
+                  <Input value={composeData.subject} onChange={e => setComposeData({ ...composeData, subject: e.target.value })} className="flex-1" />
+                </div>
+                <Textarea className="h-[300px]" value={composeData.body} onChange={e => setComposeData({ ...composeData, body: e.target.value })} />
+              </div>
+              <DialogFooter>
+                <Button onClick={handleSend}>Send Message <Send className="w-4 h-4 ml-2" /></Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-border pb-4">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as EmailTab)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
-                activeTab === tab.id
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Icon className="w-4 h-4" />
-              {tab.label}
-              {tab.count !== undefined && (
-                <span className={cn(
-                  "px-2 py-0.5 rounded-md text-xs",
-                  activeTab === tab.id ? "bg-primary/20" : "bg-muted"
-                )}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* 2. Main Content Area */}
+      <div className="flex-1 bg-card rounded-xl border border-border overflow-hidden flex flex-col">
 
-      {/* Inbox Tab */}
-      {activeTab === 'inbox' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Email List */}
-          <div className="glass-card rounded-xl overflow-hidden">
-            <div className="divide-y divide-border">
-              {emails.map((email) => (
-                <div 
-                  key={email.id}
-                  onClick={() => setSelectedEmail(email.id)}
-                  className={cn(
-                    "p-4 cursor-pointer transition-colors",
-                    selectedEmail === email.id ? "bg-primary/5" : "hover:bg-muted/50",
-                    !email.read && "border-l-2 border-primary"
-                  )}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <button onClick={(e) => { e.stopPropagation(); }}>
-                        <Star className={cn("w-4 h-4", email.starred ? "fill-warning text-warning" : "text-muted-foreground")} />
-                      </button>
-                      <span className={cn("font-medium", !email.read && "text-foreground", email.read && "text-muted-foreground")}>
+        {/* VIEW: INBOX */}
+        {currentTab === 'inbox' && (
+          <div className="flex h-full">
+            {/* Inbox List */}
+            <div className="w-1/3 border-r border-border flex flex-col">
+              <div className="p-4 border-b border-border flex justify-between items-center bg-muted/20">
+                <h3 className="font-semibold">Messages</h3>
+                <Button variant="ghost" size="icon" onClick={fetchEmails} disabled={loading}>
+                  <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                </Button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+                {emails.length === 0 && !loading && (
+                  <div className="text-center text-muted-foreground p-8 text-sm">Inbox Empty</div>
+                )}
+                {emails.map(email => (
+                  <div
+                    key={email.id}
+                    onClick={() => setSelectedEmail(email)}
+                    className={cn(
+                      "p-3 rounded-lg cursor-pointer transition-colors border text-sm",
+                      selectedEmail?.id === email.id ? "bg-primary/10 border-primary" : "bg-card hover:bg-muted border-transparent"
+                    )}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={cn("font-medium truncate", selectedEmail?.id === email.id ? "text-primary" : "text-foreground")}>
                         {email.from}
                       </span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                        {new Date(email.date).toLocaleDateString()}
+                      </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {email.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    <p className="text-muted-foreground truncate text-xs">{email.subject}</p>
                   </div>
-                  <p className={cn("text-sm mb-1", !email.read ? "font-medium text-foreground" : "text-muted-foreground")}>
-                    {email.subject}
-                  </p>
-                  <p className="text-sm text-muted-foreground line-clamp-1">{email.preview}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Email Preview */}
-          <div className="glass-card rounded-xl p-6">
-            {selectedEmail ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground">
-                    {emails.find(e => e.id === selectedEmail)?.subject}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon"><Reply className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon"><Forward className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon"><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center font-semibold">
-                    {emails.find(e => e.id === selectedEmail)?.from.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">{emails.find(e => e.id === selectedEmail)?.from}</p>
-                    <p className="text-xs text-muted-foreground">to me</p>
-                  </div>
-                </div>
-                <div className="p-4 bg-muted/30 rounded-xl">
-                  <p className="text-foreground whitespace-pre-wrap">
-                    {emails.find(e => e.id === selectedEmail)?.preview}
-                    {"\n\n"}This is the full email content that would be fetched from Gmail API...
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <Mail className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Select an email to preview</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Compose Tab */}
-      {activeTab === 'compose' && (
-        <div className="glass-card rounded-xl p-6 max-w-3xl">
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-foreground block mb-2">To</label>
-              <Input placeholder="recipient@example.com" className="bg-muted/50" />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground block mb-2">Subject</label>
-              <Input placeholder="Email subject" className="bg-muted/50" />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground block mb-2">Message</label>
-              <Textarea 
-                placeholder="Write your email here..." 
-                className="bg-muted/50 min-h-[300px]" 
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <Button variant="outline">
-                <FileText className="w-4 h-4 mr-2" />
-                Use Template
-              </Button>
-              <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90">
-                <Send className="w-4 h-4 mr-2" />
-                Send Email
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Send Tab */}
-      {activeTab === 'bulk' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 glass-card rounded-xl p-6 space-y-4">
-              <h3 className="font-semibold text-foreground">Bulk Email Campaign</h3>
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-2">Recipients (CSV or paste emails)</label>
-                <Textarea 
-                  placeholder="email1@example.com&#10;email2@example.com&#10;email3@example.com" 
-                  className="bg-muted/50 min-h-[120px] font-mono text-sm" 
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-2">Subject</label>
-                <Input placeholder="Use {{name}} for personalization" className="bg-muted/50" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-2">Message</label>
-                <Textarea 
-                  placeholder="Hi {{name}},&#10;&#10;Write your bulk email content here..." 
-                  className="bg-muted/50 min-h-[200px]" 
-                />
-              </div>
-              <div className="flex items-center gap-4">
-                <Button variant="outline">
-                  <Clock className="w-4 h-4 mr-2" />
-                  Schedule
-                </Button>
-                <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90">
-                  <Users className="w-4 h-4 mr-2" />
-                  Send to All (0 recipients)
-                </Button>
+                ))}
               </div>
             </div>
 
-            <div className="glass-card rounded-xl p-6 space-y-4">
-              <h3 className="font-semibold text-foreground">Campaign Settings</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <span className="text-sm text-muted-foreground">Delay between emails</span>
-                  <span className="font-medium text-foreground">30s</span>
+            {/* Reading Pane */}
+            <div className="flex-1 flex flex-col bg-background/50">
+              {selectedEmail ? (
+                <>
+                  <div className="p-6 border-b border-border bg-card/30">
+                    <h2 className="text-xl font-bold mb-2">{selectedEmail.subject}</h2>
+                    <div className="flex justify-between items-center">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{selectedEmail.from}</span>
+                        <span className="text-xs text-muted-foreground">{new Date(selectedEmail.date).toLocaleString()}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline"><Reply className="w-4 h-4 mr-2" /> Reply</Button>
+                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => promptDelete(selectedEmail.id)}><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 p-6 overflow-y-auto font-sans text-sm leading-relaxed whitespace-pre-wrap">
+                    {selectedEmail.body}
+                  </div>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
+                  <Mail className="w-12 h-12 mb-4 opacity-10" />
+                  <p>Select an email to read</p>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <span className="text-sm text-muted-foreground">Daily send limit</span>
-                  <span className="font-medium text-foreground">500</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <span className="text-sm text-muted-foreground">Track opens</span>
-                  <CheckCircle2 className="w-4 h-4 text-success" />
-                </div>
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <span className="text-sm text-muted-foreground">Track clicks</span>
-                  <CheckCircle2 className="w-4 h-4 text-success" />
-                </div>
-              </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Templates Tab */}
-      {activeTab === 'templates' && (
-        <div className="space-y-6">
-          <div className="flex justify-end">
-            <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90">
-              <Plus className="w-4 h-4 mr-2" />
-              New Template
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {templates.map((template) => (
-              <div key={template.id} className="glass-card-hover rounded-xl p-5 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-secondary" />
+        {/* VIEW: TEMPLATES */}
+        {currentTab === 'templates' && (
+          <div className="flex flex-col h-full bg-background/30">
+            <div className="p-6 border-b border-border bg-card/50">
+              <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                <FileText className="w-6 h-6 text-primary" /> Email Templates
+              </h2>
+              <p className="text-muted-foreground text-sm">Create and manage your reusable email content.</p>
+            </div>
+            <div className="flex-1 p-6 flex gap-6 overflow-hidden">
+              {/* Template List */}
+              <div className="w-1/3 flex flex-col gap-3 overflow-y-auto pr-2">
+                {templates.map(tmpl => (
+                  <div key={tmpl.id} className="p-4 rounded-xl border border-border bg-card hover:border-primary transition-colors group relative">
+                    <h4 className="font-semibold mb-1">{tmpl.name}</h4>
+                    <p className="text-xs text-muted-foreground truncate">{tmpl.subject}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-destructive"
+                      onClick={() => handleDeleteTemplate(tmpl.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="w-4 h-4" />
+                ))}
+                {/* Create New Card */}
+                <div className="p-4 rounded-xl border border-dashed border-border flex items-center justify-center text-muted-foreground bg-muted/20">
+                  <span className="text-xs">Create new using the form →</span>
+                </div>
+              </div>
+
+              {/* Create Form */}
+              <div className="flex-1 bg-card rounded-xl border border-border p-6 flex flex-col gap-4">
+                <h3 className="font-semibold border-b border-border pb-2">New Template</h3>
+                <div className="grid gap-2">
+                  <Label>Template Name</Label>
+                  <Input placeholder="e.g. Sales Intro" value={newTemplate.name} onChange={e => setNewTemplate({ ...newTemplate, name: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Subject Line</Label>
+                  <Input placeholder="Subject..." value={newTemplate.subject} onChange={e => setNewTemplate({ ...newTemplate, subject: e.target.value })} />
+                </div>
+                <div className="flex-1 grid gap-2">
+                  <Label>Body Content</Label>
+                  <Textarea className="h-full resize-none" placeholder="Email body..." value={newTemplate.body} onChange={e => setNewTemplate({ ...newTemplate, body: e.target.value })} />
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleCreateTemplate} disabled={!newTemplate.name}>
+                    <Plus className="w-4 h-4 mr-2" /> Save Template
                   </Button>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-foreground">{template.name}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">{template.subject}</p>
-                </div>
-                <p className="text-sm text-muted-foreground line-clamp-2">{template.body}</p>
-                <div className="flex items-center justify-between pt-2 border-t border-border">
-                  <span className="text-xs text-muted-foreground">Used {template.usageCount} times</span>
-                  <Button variant="outline" size="sm">Use</Button>
-                </div>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* VIEW: BULK MAIL */}
+        {currentTab === 'bulk' && (
+          <div className="flex flex-col h-full bg-background/30">
+            <div className="p-6 border-b border-border bg-card/50">
+              <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                <Users className="w-6 h-6 text-primary" /> Bulk Campaign
+              </h2>
+              <p className="text-muted-foreground text-sm">Send emails to multiple recipients. (Rate limits may apply)</p>
+            </div>
+            <div className="flex-1 p-6 max-w-3xl mx-auto w-full flex flex-col gap-6 overflow-y-auto">
+              <div className="space-y-4 bg-card p-6 rounded-xl border border-border shadow-sm">
+                <div className="grid gap-2">
+                  <Label>Recipients (Comma separated)</Label>
+                  <Textarea
+                    placeholder="ceo@company.com, leads@client.com, ..."
+                    className="h-24"
+                    value={bulkRecipients}
+                    onChange={e => setBulkRecipients(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground text-right">{bulkRecipients ? bulkRecipients.split(',').length : 0} recipients</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Subject</Label>
+                  <Input placeholder="Campaign subject..." value={bulkSubject} onChange={e => setBulkSubject(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Message Body</Label>
+                  <Textarea className="h-48" placeholder="Your message here..." value={bulkBody} onChange={e => setBulkBody(e.target.value)} />
+                </div>
+
+                {bulkProgress.sending ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Sending...</span>
+                      <span>{bulkProgress.sent} / {bulkProgress.total}</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${(bulkProgress.sent / bulkProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <Button className="w-full" size="lg" onClick={handleBulkSend} disabled={!bulkRecipients || !bulkSubject || !bulkBody}>
+                    <Send className="w-4 h-4 mr-2" /> Launch Campaign
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!emailToDelete} onOpenChange={() => setEmailToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently move the email to the Trash folder.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Email
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

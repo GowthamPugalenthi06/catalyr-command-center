@@ -1,46 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { agents, leads, metrics } from '@/data/mockData';
-import { 
-  BarChart3, TrendingUp, TrendingDown, Users, Target, 
+import {
+  BarChart3, TrendingUp, TrendingDown, Users, Target,
   DollarSign, Activity, ArrowUpRight, Calendar, Clock
 } from 'lucide-react';
-import { 
+import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
+  BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
 
+// Static placeholder data for charts until we have real historical analytics
 const revenueData = [
-  { month: 'Jan', revenue: 12500, leads: 45, tasks: 120 },
-  { month: 'Feb', revenue: 18200, leads: 62, tasks: 145 },
-  { month: 'Mar', revenue: 15800, leads: 58, tasks: 132 },
-  { month: 'Apr', revenue: 22400, leads: 78, tasks: 167 },
-  { month: 'May', revenue: 28100, leads: 92, tasks: 189 },
-  { month: 'Jun', revenue: 24500, leads: 85, tasks: 178 },
+  { month: 'Jan', revenue: 0, leads: 0, tasks: 0 },
+  { month: 'Feb', revenue: 0, leads: 0, tasks: 0 },
+  { month: 'Mar', revenue: 0, leads: 0, tasks: 0 },
+  { month: 'Apr', revenue: 0, leads: 0, tasks: 0 },
+  { month: 'May', revenue: 0, leads: 0, tasks: 0 },
+  { month: 'Jun', revenue: 5000, leads: 5, tasks: 20 },
 ];
 
 const agentMetrics = [
-  { subject: 'Speed', A: 92, fullMark: 100 },
-  { subject: 'Accuracy', A: 88, fullMark: 100 },
-  { subject: 'Efficiency', A: 95, fullMark: 100 },
-  { subject: 'Output', A: 78, fullMark: 100 },
-  { subject: 'Quality', A: 91, fullMark: 100 },
+  { subject: 'Speed', A: 85, fullMark: 100 },
+  { subject: 'Accuracy', A: 90, fullMark: 100 },
+  { subject: 'Efficiency', A: 88, fullMark: 100 },
+  { subject: 'Output', A: 92, fullMark: 100 },
+  { subject: 'Quality', A: 85, fullMark: 100 },
 ];
 
 const hourlyActivity = Array.from({ length: 24 }, (_, i) => ({
   hour: `${i}:00`,
-  tasks: Math.floor(Math.random() * 20) + 5,
-  emails: Math.floor(Math.random() * 15) + 2,
+  tasks: Math.floor(Math.random() * 5), // Simulated activity
+  emails: Math.floor(Math.random() * 3),
 }));
 
 type TimeRange = '7d' | '30d' | '90d' | '1y';
 
 export function AnalyticsView() {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [agents, setAgents] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [agentsRes, leadsRes] = await Promise.all([
+          fetch('/api/agents'),
+          fetch('/api/leads')
+        ]);
+        setAgents(await agentsRes.json());
+        setLeads(await leadsRes.json());
+      } catch (e) {
+        console.error("Failed to fetch analytics data", e);
+      }
+    };
+    fetchData();
+  }, []);
 
   const topAgents = [...agents].sort((a, b) => b.tasksCompleted - a.tasksCompleted).slice(0, 5);
-  const hotLeads = leads.filter(l => l.status === 'hot').length;
-  const warmLeads = leads.filter(l => l.status === 'warm').length;
+  const hotLeads = leads.filter((l: any) => l.status === 'QUALIFIED' || l.status === 'hot').length;
+  // const warmLeads = leads.filter((l: any) => l.status === 'CONTACTED' || l.status === 'warm').length;
 
   return (
     <div className="space-y-6">
@@ -57,8 +75,8 @@ export function AnalyticsView() {
               onClick={() => setTimeRange(range)}
               className={cn(
                 "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                timeRange === range 
-                  ? "bg-primary text-primary-foreground" 
+                timeRange === range
+                  ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -71,29 +89,31 @@ export function AnalyticsView() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Revenue', value: '$108.5K', change: 23.5, icon: DollarSign, trend: 'up' },
-          { label: 'Lead Conversion', value: '12.4%', change: 2.1, icon: Target, trend: 'up' },
-          { label: 'Avg Response Time', value: '1.2s', change: -15, icon: Clock, trend: 'up' },
-          { label: 'Agent Utilization', value: '87%', change: 5.3, icon: Activity, trend: 'up' },
+          { label: 'Total Revenue', value: '$0.00', change: 0, icon: DollarSign, trend: 'neutral' },
+          { label: 'Market Leads', value: leads.length.toString(), change: hotLeads, icon: Target, trend: 'up' },
+          { label: 'Avg Response Time', value: '0.5s', change: 0, icon: Clock, trend: 'neutral' },
+          { label: 'Active Agents', value: agents.length.toString(), change: 0, icon: Activity, trend: 'neutral' },
         ].map((kpi) => (
           <div key={kpi.label} className="glass-card rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
               <div className={cn(
                 "w-10 h-10 rounded-lg flex items-center justify-center",
-                kpi.trend === 'up' ? "bg-success/10" : "bg-destructive/10"
+                kpi.trend === 'up' ? "bg-success/10" : "bg-primary/10"
               )}>
                 <kpi.icon className={cn(
                   "w-5 h-5",
-                  kpi.trend === 'up' ? "text-success" : "text-destructive"
+                  kpi.trend === 'up' ? "text-success" : "text-primary"
                 )} />
               </div>
-              <div className={cn(
-                "flex items-center gap-1 text-sm font-medium",
-                kpi.change > 0 ? "text-success" : "text-destructive"
-              )}>
-                {kpi.change > 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                {Math.abs(kpi.change)}%
-              </div>
+              {kpi.change !== 0 && (
+                <div className={cn(
+                  "flex items-center gap-1 text-sm font-medium",
+                  kpi.change > 0 ? "text-success" : "text-muted-foreground"
+                )}>
+                  {kpi.change > 0 ? <TrendingUp className="w-4 h-4" /> : null}
+                  {kpi.change > 0 ? '+' : ''}{kpi.change}
+                </div>
+              )}
             </div>
             <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
             <p className="text-sm text-muted-foreground">{kpi.label}</p>
@@ -129,7 +149,7 @@ export function AnalyticsView() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v/1000}k`} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
@@ -192,7 +212,7 @@ export function AnalyticsView() {
           </div>
           <div className="space-y-4">
             {topAgents.map((agent, i) => (
-              <div key={agent.id} className="flex items-center gap-3">
+              <div key={agent._id || i} className="flex items-center gap-3">
                 <span className={cn(
                   "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
                   i === 0 && "bg-warning/20 text-warning",
@@ -202,19 +222,20 @@ export function AnalyticsView() {
                 )}>
                   {i + 1}
                 </span>
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                  {agent.avatar}
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  {agent.avatar || '🤖'}
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-foreground">{agent.name}</p>
                   <p className="text-xs text-muted-foreground">{agent.role}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-foreground">{agent.tasksCompleted.toLocaleString()}</p>
+                  <p className="text-sm font-semibold text-foreground">{agent.tasksCompleted?.toLocaleString() || 0}</p>
                   <p className="text-xs text-muted-foreground">tasks</p>
                 </div>
               </div>
             ))}
+            {topAgents.length === 0 && <p className="text-muted-foreground text-sm">No agents active.</p>}
           </div>
         </div>
       </div>

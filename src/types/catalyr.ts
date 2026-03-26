@@ -2,7 +2,7 @@ export type AgentRank = 'L1' | 'L2' | 'L3' | 'L4' | 'L5';
 
 export type AgentStatus = 'active' | 'pending' | 'idle' | 'offline';
 
-export type Department = 
+export type Department =
   | 'Executive'
   | 'Marketing'
   | 'Sales'
@@ -31,6 +31,7 @@ export type TaskStatus = 'pending' | 'in_progress' | 'review' | 'completed' | 's
 
 export interface Task {
   id: string;
+  _id?: string;
   title: string;
   description: string;
   assignee: Agent;
@@ -40,6 +41,10 @@ export interface Task {
   createdAt: Date;
   progress: number;
   tags: string[];
+  type?: 'task' | 'meeting' | 'leave';
+  startTime?: Date;
+  endTime?: Date;
+  startDate?: Date;
 }
 
 export interface Lead {
@@ -68,7 +73,7 @@ export interface Message {
   content: string;
   timestamp: Date;
   agent?: Agent;
-  status?: 'thinking' | 'complete';
+  status?: 'thinking' | 'complete' | 'error';
 }
 
 export interface MetricCard {

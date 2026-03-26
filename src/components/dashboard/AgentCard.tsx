@@ -4,6 +4,7 @@ import { Agent } from '@/types/catalyr';
 interface AgentCardProps {
   agent: Agent;
   compact?: boolean;
+  onClick?: (agent: Agent) => void;
 }
 
 const rankColors = {
@@ -21,7 +22,7 @@ const statusColors = {
   offline: 'bg-destructive',
 };
 
-export function AgentCard({ agent, compact = false }: AgentCardProps) {
+export function AgentCard({ agent, compact = false, onClick }: AgentCardProps) {
   if (compact) {
     return (
       <div className="flex items-center gap-3 p-3 glass-card-hover rounded-xl">
@@ -109,7 +110,7 @@ export function AgentCard({ agent, compact = false }: AgentCardProps) {
         </div>
         <div className="flex items-center gap-2">
           <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
               style={{ width: `${agent.performance}%` }}
             />
@@ -117,6 +118,13 @@ export function AgentCard({ agent, compact = false }: AgentCardProps) {
           <span className="text-foreground font-medium">{agent.performance}%</span>
         </div>
       </div>
+
+      {/* Click to view details overlay */}
+      <button
+        onClick={() => onClick && onClick(agent)}
+        className="absolute inset-0 w-full h-full opacity-0 hover:bg-transparent cursor-pointer"
+        aria-label={`View details for ${agent.name}`}
+      />
     </div>
   );
 }

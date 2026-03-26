@@ -1,149 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-
 @layer base {
   :root {
-    /* Light Theme */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    /* Enterprise Command Center Theme */
+
+    /* Clean, soft white background */
+    --background: 220 33% 98%;
+    --foreground: 224 71% 4%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 224 71% 4%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 224 71% 4%;
 
-    --primary: 174 72% 40%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary: #006eba (International Klein Blue) */
+    --primary: 205 100% 36.5%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 263 70% 50%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary: Cool Slate */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 224 71% 4%;
 
-    --muted: 210 20% 94%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 263 70% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 224 71% 4%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
+    --success: 151 55% 42%;
+    /* Deep Mint/Green */
+    --warning: 32 95% 44%;
+    /* Deep Orange */
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 11%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 205 100% 36.5%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 174 72% 40%;
+    --radius: 0.5rem;
 
-    --radius: 0.75rem;
-
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 174 72% 40%;
+    /* Sidebar: Deep Navy/Black (Unique Identity) */
+    --sidebar-background: 224 71% 4%;
+    /* Deepest Navy */
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 205 100% 36.5%;
+    /* Deep Blue */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 174 72% 40%;
-
-    /* Custom Catalyr tokens */
-    --glow-primary: 174 72% 40%;
-    --glow-secondary: 263 70% 50%;
-    --glass: 0 0% 100%;
-    --glass-border: 214 32% 91%;
-
-    /* Agent rank colors */
-    --rank-l1: 174 72% 40%;
-    --rank-l2: 263 70% 50%;
-    --rank-l3: 38 92% 50%;
-    --rank-l4: 142 76% 36%;
-    --rank-l5: 215 16% 47%;
-
-    /* Status colors */
-    --status-active: 142 76% 36%;
-    --status-pending: 38 92% 50%;
-    --status-idle: 215 16% 47%;
-
-    /* Chart colors for light mode */
-    --chart-grid: 214 32% 91%;
-    --chart-text: 215 16% 47%;
-    --chart-tooltip-bg: 0 0% 100%;
-    --chart-tooltip-border: 214 32% 91%;
+    --sidebar-accent: 224 64% 12%;
+    /* Lighter Navy Hover */
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 224 64% 12%;
+    --sidebar-ring: 205 100% 36.5%;
   }
 
   .dark {
-    --background: 222 47% 6%;
+    --background: 224 71% 4%;
+    /* Deep Dark Mode */
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 8%;
+    --card: 224 64% 8%;
+    /* Slightly lighter than bg */
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 8%;
+    --popover: 224 64% 8%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 174 72% 56%;
-    --primary-foreground: 222 47% 6%;
+    /* Primary: #006eba */
+    --primary: 205 100% 36.5%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 263 70% 58%;
+    --secondary: 215 28% 17%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217 33% 15%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 215 28% 17%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 263 70% 58%;
+    --accent: 215 28% 17%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --success: 142 76% 46%;
-    --success-foreground: 222 47% 6%;
+    --success: 151 55% 42%;
+    --warning: 32 95% 44%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 6%;
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 205 100% 36.5%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 174 72% 56%;
-
-    --sidebar-background: 222 47% 7%;
+    --sidebar-background: 224 71% 4%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 174 72% 56%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 217 33% 15%;
+    --sidebar-primary: 205 100% 36.5%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 28% 17%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 174 72% 56%;
-
-    /* Custom Catalyr tokens */
-    --glow-primary: 174 72% 56%;
-    --glow-secondary: 263 70% 58%;
-    --glass: 222 47% 10%;
-    --glass-border: 217 33% 20%;
-
-    /* Agent rank colors */
-    --rank-l1: 174 72% 56%;
-    --rank-l2: 263 70% 58%;
-    --rank-l3: 38 92% 50%;
-    --rank-l4: 142 76% 46%;
-    --rank-l5: 215 20% 55%;
-
-    /* Status colors */
-    --status-active: 142 76% 46%;
-    --status-pending: 38 92% 50%;
-    --status-idle: 215 20% 45%;
-
-    /* Chart colors for dark mode */
-    --chart-grid: 217 33% 17%;
-    --chart-text: 215 20% 55%;
-    --chart-tooltip-bg: 222 47% 8%;
-    --chart-tooltip-border: 217 33% 17%;
+    --sidebar-border: 215 28% 17%;
+    --sidebar-ring: 205 100% 36.5%;
   }
 }
 
@@ -157,7 +116,8 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  code, pre {
+  code,
+  pre {
     font-family: 'JetBrains Mono', monospace;
   }
 }
@@ -192,13 +152,13 @@
   }
 
   .text-gradient-glow {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-[hsl(var(--primary))] via-[hsl(174,72%,70%)] to-[hsl(var(--secondary))];
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[hsl(var(--primary))] via-[hsl(174, 72%, 70%)] to-[hsl(var(--secondary))];
   }
 
   .border-gradient {
     border: 1px solid transparent;
     background: linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
-                linear-gradient(135deg, hsl(var(--primary) / 0.5), hsl(var(--secondary) / 0.5)) border-box;
+      linear-gradient(135deg, hsl(var(--primary) / 0.5), hsl(var(--secondary) / 0.5)) border-box;
   }
 
   .animate-pulse-glow {
@@ -206,9 +166,12 @@
   }
 
   @keyframes pulse-glow {
-    0%, 100% {
+
+    0%,
+    100% {
       box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.4);
     }
+
     50% {
       box-shadow: 0 0 30px -5px hsl(var(--primary) / 0.6);
     }
@@ -219,9 +182,12 @@
   }
 
   @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0px);
     }
+
     50% {
       transform: translateY(-10px);
     }
