@@ -69,6 +69,11 @@ async function executeTask(taskId) {
 function mapDepartmentToAgent(department, title) {
     const t = (title || '').toLowerCase();
 
+    // 🔬 PRIORITY: Analytical / Data Work (Data Scientist ALWAYS handles these)
+    if (t.includes('data') || t.includes('analytics') || t.includes('analysis') || t.includes('ml') || t.includes('insight') || t.includes('prediction')) {
+        return 'Data Scientist';
+    }
+
     // Explicit department mappings
     const deptMap = {
         'Engineering': 'Software Developer',
@@ -118,7 +123,7 @@ function mapDepartmentToAgent(department, title) {
     if (t.includes('code') || t.includes('develop') || t.includes('implement') || t.includes('bug') || t.includes('feature')) return 'Software Developer';
     if (t.includes('test') || t.includes('qa') || t.includes('quality')) return 'QA/Test Engineer';
     if (t.includes('deploy') || t.includes('ci/cd') || t.includes('pipeline') || t.includes('docker')) return 'DevOps Engineer';
-    if (t.includes('data') || t.includes('analytics') || t.includes('ml') || t.includes('insight')) return 'Data Scientist';
+    if (t.includes('test') || t.includes('qa') || t.includes('quality')) return 'QA/Test Engineer';
     if (t.includes('design') || t.includes('wireframe') || t.includes('ux') || t.includes('ui')) return 'UI/UX Designer';
     if (t.includes('hire') || t.includes('onboard') || t.includes('employee') || t.includes('policy')) return 'HR Manager';
     if (t.includes('budget') || t.includes('invoice') || t.includes('financial') || t.includes('cost')) return 'Finance Manager';

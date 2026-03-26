@@ -31,7 +31,8 @@ Rules:
 - Low-impact tasks are delayed or killed.
 Output:
 - JSON Object with: { "title", "description", "department", "priority", "deadline", "agentRole" }
-- agentRole should be one of the enabled agent names.
+- agentRole MUST be one of the provided "Available Agents" names.
+- If no specialist matches the task (e.g., "Content Creator" is not listed), use Orion (COO) as the agentRole.
 `;
 
     try {
@@ -78,6 +79,15 @@ Output:
             if (agent) assignedAgentId = agent._id;
         }
 
+        // 🛡️ FALLBACK: If no agent found (or hallucinated), assign to COO
+        if (!assignedAgentId) {
+            const coo = await Agent.findOne({ 
+                $or: [{ role: 'COO' }, { name: 'COO' }], 
+                isEnabled: true 
+            });
+            if (coo) assignedAgentId = coo._id;
+        }
+
         // Create Task in DB
         const newTask = await Task.create({
             title: refinedTaskData.title || routerOutput.taskTitle,
@@ -101,6 +111,10 @@ Output:
     } catch (error) {
         console.error("[COO Agent] Error:", error);
         // Fallback: create task with basic info
+        let fallbackAgentId = null;
+        const coo = await Agent.findOne({ $or: [{ role: 'COO' }, { name: 'COO' }], isEnabled: true });
+        if (coo) fallbackAgentId = coo._id;
+
         const newTask = await Task.create({
             title: routerOutput.taskTitle,
             description: routerOutput.description || "Auto-generated task",
@@ -108,6 +122,7 @@ Output:
             priority: routerOutput.priority || 3,
             status: 'PENDING',
             requiresApproval: true,
+            assignedAgent: fallbackAgentId,
             inputRefs: { chatId: originalChatId },
             deadline: new Date(Date.now() + 24 * 60 * 60 * 1000),
         });

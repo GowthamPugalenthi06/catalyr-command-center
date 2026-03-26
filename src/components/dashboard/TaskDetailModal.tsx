@@ -139,7 +139,6 @@ export function TaskDetailModal({ task, onClose, onStatusChange, onDelete }: Tas
                         {task.status === 'review' && (
                             <>
                                 <Button variant="destructive" onClick={() => handleStatusUpdate('declined')}>Decline (No Need)</Button>
-                                <Button variant="outline" onClick={() => handleStatusUpdate('pending')}>Reject / Redo</Button>
                                 <Button className="bg-success hover:bg-success/90 text-white" onClick={() => handleStatusUpdate('completed')}>Approve & Complete</Button>
                             </>
                         )}

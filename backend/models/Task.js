@@ -8,14 +8,6 @@ const taskSchema = mongoose.Schema({
     description: String,
     department: {
         type: String,
-        enum: [
-            'Engineering', 'QA', 'DevOps', 'Data', 'Design',
-            'Management', 'Product', 'Executive',
-            'HR', 'Finance',
-            'Marketing', 'Sales', 'Operations', 'Customer Service',
-            // Legacy compat
-            'Ops', 'Technology', 'Calendar Management',
-        ],
         required: false,
     },
     assignedAgent: {

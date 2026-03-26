@@ -27,7 +27,6 @@ const chatMessageSchema = mongoose.Schema({
         {
             intent: {
                 type: String,
-                enum: ['CONTENT_CREATE', 'LEAD_GENERATE', 'ANALYSIS', 'SCHEDULE', 'FINANCE', 'CHAT'],
             },
             confidence: Number,
         },

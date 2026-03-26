@@ -26,8 +26,10 @@ Process:
 1. Read the incoming chat message.
 2. Identify one or more intents.
 3. Convert each intent into a structured task request.
-4. Assign the correct agent from the Available Agents list.
-5. Send output ONLY as JSON.
+4. IMPORTANT: Only assign tasks to agents from the "Available Agents" list. 
+5. If a task requires a specialist NOT in the list (e.g., "Content Creator" is missing), assign that task to the **COO** instead.
+6. Explain any fallback assignments in the "chatResponse" (e.g., "I'll handle this LinkedIn post myself since we haven't hired a Content Creator yet.").
+7. Send output ONLY as JSON.
 
 Allowed intents:
 - CONTENT_CREATE → Content Creator
@@ -47,20 +49,22 @@ Allowed intents:
 - SCHEDULE → Project Manager
 - CHAT → (direct reply, no task)
 
-If the user just wants to talk or asks a general question, use intent "CHAT".
-For "CHAT", return { "intent": "CHAT", "reply": "Your concise response here" }.
-Reject vague commands. Do not assume. Do not hallucinate.
+If the user asks an "Analysis" or "Why" question (e.g., "Why are leads not converting?"), use the RAG Company Context to provide a direct, insightful response in "chatResponse".
+If a command requires professional specialist work (e.g., "Analyze the churn data"), create a DATA_ANALYZE task for the Data Scientist in the "tasks" array AND summarize your intent in "chatResponse".
 
-Output format:
-[
-  {
-    "taskTitle": "",
-    "intent": "",
-    "department": "",
-    "agentRole": "",
-    "priority": 1-5
-  }
-]
+Output ONLY as a JSON object:
+{
+  "tasks": [
+    {
+      "taskTitle": "",
+      "intent": "", // One of the allowed intents
+      "department": "",
+      "agentRole": "",
+      "priority": 1-5
+    }
+  ],
+  "chatResponse": "A thoughtful, concise answer OR a summary of what you've assigned to the team."
+}
 `;
 
         const completion = await groq.chat.completions.create({
@@ -78,18 +82,18 @@ Output format:
 
         let parsed = JSON.parse(content);
 
-        // Handle wrapper objects
-        if (!Array.isArray(parsed) && typeof parsed === 'object') {
-            const values = Object.values(parsed);
-            const arrayValue = values.find(v => Array.isArray(v));
-            if (arrayValue) {
-                parsed = arrayValue;
-            } else if (parsed.intent || parsed.taskTitle) {
-                parsed = [parsed];
-            }
+        // Standardize output to always have tasks and chatResponse
+        const result = {
+            tasks: parsed.tasks || [],
+            chatResponse: parsed.chatResponse || ""
+        };
+
+        // Fallback: If AI returned an array at root despite instructions
+        if (Array.isArray(parsed)) {
+            result.tasks = parsed;
         }
 
-        return Array.isArray(parsed) ? parsed : [];
+        return result;
     } catch (error) {
         console.error("Router Agent Error:", error);
         return [];
